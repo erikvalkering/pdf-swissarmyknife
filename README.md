@@ -1,2 +1,2 @@
 # pdf-swissarmyknife
-Collection of tools for processing of pdf files
+Collection of tools for processing pdf files
