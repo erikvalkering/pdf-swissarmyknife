@@ -1,18 +1,25 @@
 use std::collections::HashSet;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufReader, BufRead};
 
 use itertools::Itertools;
 
-use lopdf::{Document, Error};
+use lopdf::Document;
 
-fn main() -> Result<(), Error> {
-    let doc = Document::load("thesis.pdf")?;
+fn main() {
+    let doc = Document::load("thesis.pdf").expect("Unable to open PDF");
 
-    let words: HashSet<_> = vec!["nurbs".to_owned(), "ray".to_owned(), "erik".to_owned()].into_iter().collect();
+    let words_file = File::open("words.txt").expect("Cannot open words.txt containing the words to look for in the PDF");
+    let words: HashSet<_> = BufReader::new(words_file)
+        .lines()
+        .map(|x| x.expect("Unable to parse a line from the words.txt"))
+        .map(|word| word.to_lowercase())
+        .collect();
 
     let mut index: HashMap<String, Vec<(String, u32)>> = HashMap::new();
     for (page_number, _) in doc.get_pages() {
-        let text = doc.extract_text(&[page_number])?;
+        let text = doc.extract_text(&[page_number]).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
 
         for word in text.split_whitespace() {
             let key = word.to_lowercase();
@@ -33,6 +40,4 @@ fn main() -> Result<(), Error> {
             page_numbers.iter().join(", "),
         );
     }
-
-    Ok(())
 }
