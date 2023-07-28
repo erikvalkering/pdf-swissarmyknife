@@ -25,6 +25,7 @@ fn main() {
             let word = word.trim_matches(|c| "()[]".contains(c));
             if word.is_empty() { continue; }
             if !word.chars().all(char::is_alphabetic) { continue; }
+
             let key = word.to_lowercase();
             if !words.contains(&key) { continue; }
 
