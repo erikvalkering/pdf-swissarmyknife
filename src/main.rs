@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 
@@ -17,7 +17,7 @@ fn main() {
         .map(|word| word.to_lowercase())
         .collect();
 
-    let mut index: HashMap<String, Vec<(String, u32)>> = HashMap::new();
+    let mut index: BTreeMap<String, Vec<(String, u32)>> = BTreeMap::new();
     for (page_number, _) in doc.get_pages() {
         let text = doc.extract_text(&[page_number]).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
 
