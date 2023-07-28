@@ -23,10 +23,10 @@ fn main() {
 
         for word in text.split_whitespace() {
             let key = word.to_lowercase();
-            if words.contains(&key) {
-                let entry = &mut *index.entry(key).or_insert(vec![]);
-                entry.push((word.to_owned(), page_number));
-            }
+            if !words.contains(&key) { continue; }
+
+            let entry = &mut *index.entry(key).or_insert(vec![]);
+            entry.push((word.to_owned(), page_number));
         }
     }
 
