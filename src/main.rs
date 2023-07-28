@@ -1,15 +1,28 @@
-use lopdf::{Document};
+use std::collections::HashMap;
 
-fn extract_text_from_page(pdf_path: &str, page_number: u32) -> Result<String, Box<dyn std::error::Error>> {
-    let doc = Document::load(pdf_path)?;
+use itertools::Itertools;
 
-    let text = doc.extract_text(&[page_number])?;
-    Ok(text)
-}
+use lopdf::{Document, Error};
 
-fn main() {
-    let out = extract_text_from_page("thesis.pdf", 1).unwrap();
-    for word in out.split_whitespace() {
-        println!("{}", word);
+fn main() -> Result<(), Error> {
+    let doc = Document::load("thesis.pdf")?;
+
+    let mut index: HashMap<String, Vec<u32>> = HashMap::new();
+    for (page_number, _) in doc.get_pages() {
+        let text = doc.extract_text(&[page_number])?;
+
+        for word in text.split_whitespace() {
+            let word = word.to_lowercase();
+
+            let entry = &mut *index.entry(word).or_insert(vec![]);
+            entry.push(page_number);
+        }
     }
+
+    for (word, pages) in index {
+        let page_numbers = pages.iter().join(", ");
+        println!("{}: {}", word, page_numbers);
+    }
+
+    Ok(())
 }
