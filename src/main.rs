@@ -20,9 +20,9 @@ struct Args {
     #[arg(short, long, default_value = "words.txt")]
     words: Option<PathBuf>,
 
-    /// Trim parentheses and only allow alphabetic characters
-    #[arg(short, long, default_value_t = true)]
-    filter: bool,
+    /// Disable trimming of parentheses and allow non-alphabetic characters
+    #[arg(short, long, default_value_t = false)]
+    no_filtering: bool,
 }
 
 fn load_words(path: &PathBuf) -> HashSet<String> {
@@ -48,7 +48,7 @@ fn main() {
         let text = doc.extract_text(&[page_number]).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
 
         for word in text.split_whitespace() {
-            let word = if args.filter {
+            let word = if !args.no_filtering {
                 let word = word.trim_matches(|c| "()[]".contains(c));
                 if word.is_empty() { continue; }
                 if !word.chars().all(char::is_alphabetic) { continue; }
