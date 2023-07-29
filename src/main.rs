@@ -1,5 +1,6 @@
 use std::collections::{BTreeSet, HashSet, BTreeMap};
 use std::fs::File;
+use std::path::PathBuf;
 use std::io::{BufReader, BufRead};
 
 use clap::Parser;
@@ -13,14 +14,14 @@ use lopdf::Document;
 struct Args {
     /// Path to PDF to generate an index for
     #[arg(short, long)]
-    pdf: String,
+    pdf: PathBuf,
 
     /// Path to file containing the words to be considered
     #[arg(short, long)]
-    words: Option<String>,
+    words: Option<PathBuf>,
 }
 
-fn load_words(path: &str) -> HashSet<String> {
+fn load_words(path: &PathBuf) -> HashSet<String> {
     let words_file = File::open(path).expect("Cannot open words.txt containing the words to look for in the PDF");
     let words: HashSet<_> = BufReader::new(words_file)
         .lines()
