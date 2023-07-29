@@ -21,7 +21,7 @@ struct Args {
     output: PathBuf,
 
     /// Path to file containing the words to be considered
-    #[arg(short, long, default_value = "words.txt")]
+    #[arg(short, long, default_value = "words.txt", num_args(0..=1))]
     words: Option<PathBuf>,
 
     /// Disable trimming of parentheses and allow non-alphabetic characters
