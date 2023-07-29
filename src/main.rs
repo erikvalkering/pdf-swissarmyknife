@@ -38,7 +38,7 @@ fn main() {
 
     let words = args.words.map(|x| load_words(&x));
 
-    let mut index: BTreeMap<String, Vec<(String, u32)>> = BTreeMap::new();
+    let mut index = BTreeMap::new();
     for (page_number, _) in doc.get_pages() {
         let text = doc.extract_text(&[page_number]).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
 
@@ -55,7 +55,7 @@ fn main() {
                 continue;
             }
 
-            let entry: &mut Vec<(String, u32)> = &mut *index.entry(key).or_insert(vec![]);
+            let entry = &mut *index.entry(key).or_insert(vec![]);
             entry.push((word.to_owned(), page_number));
         }
     }
