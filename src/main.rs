@@ -13,11 +13,11 @@ use lopdf::Document;
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Path to PDF to generate an index for
-    #[arg(short, long)]
+    #[arg(short, long, default_value = "thesis.pdf")]
     pdf: PathBuf,
 
     /// Path to file containing the words to be considered
-    #[arg(short, long)]
+    #[arg(short, long, default_value = "words.txt")]
     words: Option<PathBuf>,
 }
 
