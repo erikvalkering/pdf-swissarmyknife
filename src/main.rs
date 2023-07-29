@@ -1,5 +1,4 @@
-use std::collections::HashSet;
-use std::collections::BTreeMap;
+use std::collections::{BTreeSet, HashSet, BTreeMap};
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 
@@ -63,7 +62,7 @@ fn main() {
 
     for pages in index.values() {
         let unique_words: HashSet<_> = pages.iter().map(|(word, _)| word).collect();
-        let page_numbers: HashSet<_> = pages.iter().map(|(_, page)| page).collect();
+        let page_numbers: BTreeSet<_> = pages.iter().map(|(_, page)| page).collect();
 
         println!(
             "{}: {}",
