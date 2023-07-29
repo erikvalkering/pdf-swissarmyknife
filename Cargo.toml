@@ -2,6 +2,8 @@
 name = "pdf-swissarmyknife"
 version = "0.1.0"
 edition = "2021"
+authors = ["Erik Valkering <erikvalkering@gmail.com>"]
+description = "Collection of tools for processing of pdf files"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
