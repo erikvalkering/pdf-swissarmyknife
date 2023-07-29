@@ -4,10 +4,9 @@ use std::path::PathBuf;
 use std::io::{BufReader, BufRead, Write};
 
 use clap::Parser;
-
 use itertools::Itertools;
-
 use lopdf::Document;
+use colored::Colorize;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -30,6 +29,7 @@ struct Args {
 }
 
 fn load_words(path: &PathBuf) -> HashSet<String> {
+    println!("{}", "Loading words file...".green());
     let words_file = File::open(path).expect("Cannot open words.txt containing the words to look for in the PDF");
     let words: HashSet<_> = BufReader::new(words_file)
         .lines()
@@ -43,10 +43,12 @@ fn load_words(path: &PathBuf) -> HashSet<String> {
 fn main() {
     let args = Args::parse();
 
+    println!("{}", "Reading pdf...".green());
     let doc = Document::load(args.pdf).expect("Unable to open PDF");
 
     let words = args.words.map(|x| load_words(&x));
 
+    println!("{}", "Extracting words from pages...".green());
     let mut index = BTreeMap::new();
     for (page_number, _) in doc.get_pages() {
         let text = doc.extract_text(&[page_number]).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
@@ -74,6 +76,7 @@ fn main() {
         }
     }
 
+    println!("{}", "Writing to output file...".green());
     let mut output = File::create(args.output).expect("Unable to create output file");
     for pages in index.values() {
         let unique_words: HashSet<_> = pages.iter().map(|(word, _)| word).collect();
