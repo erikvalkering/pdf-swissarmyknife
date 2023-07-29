@@ -19,6 +19,10 @@ struct Args {
     /// Path to file containing the words to be considered
     #[arg(short, long, default_value = "words.txt")]
     words: Option<PathBuf>,
+
+    /// Trim parentheses and only allow alphabetic characters
+    #[arg(short, long, default_value_t = true)]
+    filter: bool,
 }
 
 fn load_words(path: &PathBuf) -> HashSet<String> {
@@ -44,9 +48,14 @@ fn main() {
         let text = doc.extract_text(&[page_number]).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
 
         for word in text.split_whitespace() {
-            let word = word.trim_matches(|c| "()[]".contains(c));
-            if word.is_empty() { continue; }
-            if !word.chars().all(char::is_alphabetic) { continue; }
+            let word = if args.filter {
+                let word = word.trim_matches(|c| "()[]".contains(c));
+                if word.is_empty() { continue; }
+                if !word.chars().all(char::is_alphabetic) { continue; }
+
+                word
+            }
+            else { word };
 
             let key = word.to_lowercase();
             if match &words {
