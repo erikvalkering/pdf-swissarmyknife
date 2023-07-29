@@ -1,7 +1,7 @@
 use std::collections::{BTreeSet, HashSet, BTreeMap};
 use std::fs::File;
 use std::path::PathBuf;
-use std::io::{BufReader, BufRead};
+use std::io::{BufReader, BufRead, Write};
 
 use clap::Parser;
 
@@ -15,6 +15,10 @@ struct Args {
     /// Path to PDF to generate an index for
     #[arg(short, long, default_value = "input.pdf")]
     pdf: PathBuf,
+
+    /// Path file to write index to
+    #[arg(short, long, default_value = "index.txt")]
+    output: PathBuf,
 
     /// Path to file containing the words to be considered
     #[arg(short, long, default_value = "words.txt")]
@@ -70,14 +74,16 @@ fn main() {
         }
     }
 
+    let mut output = File::create(args.output).expect("Unable to create output file");
     for pages in index.values() {
         let unique_words: HashSet<_> = pages.iter().map(|(word, _)| word).collect();
         let page_numbers: BTreeSet<_> = pages.iter().map(|(_, page)| page).collect();
 
-        println!(
+        writeln!(
+            output,
             "{}: {}",
             unique_words.iter().join(", "),
             page_numbers.iter().join(", "),
-        );
+        ).expect("Unable to write index entry to output");
     }
 }
