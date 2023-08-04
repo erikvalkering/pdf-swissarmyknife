@@ -89,7 +89,6 @@ fn extract_text(self_: &Document, page_numbers: &[u32]) -> lopdf::Result<String>
                     }
                     "ET" => {
                         if !text.ends_with('\n') {
-                            text.push('\n');
                         }
                     }
                     _ => {}
