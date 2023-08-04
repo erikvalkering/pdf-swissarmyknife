@@ -55,7 +55,7 @@ fn main() {
 
         for word in text.split_whitespace() {
             let word = if !args.no_filtering {
-                let word = word.trim_matches(|c| "()[]".contains(c));
+                let word = word.trim_matches(|c| !char::is_alphabetic(c));
                 if word.is_empty() { continue; }
                 if !word.chars().all(char::is_alphabetic) { continue; }
 
