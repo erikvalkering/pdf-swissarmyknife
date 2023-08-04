@@ -6,6 +6,7 @@ use std::io::{BufReader, BufRead, Write};
 use clap::Parser;
 use itertools::Itertools;
 use lopdf::Document;
+use lopdf::Object;
 use colored::Colorize;
 
 #[derive(Parser, Debug)]
@@ -40,6 +41,64 @@ fn load_words(path: &PathBuf) -> HashSet<String> {
     words
 }
 
+fn extract_text(self_: &Document, page_numbers: &[u32]) -> lopdf::Result<String> {
+        fn collect_text(text: &mut String, encoding: Option<&str>, operands: &[Object]) {
+            for operand in operands.iter() {
+                match *operand {
+                    Object::String(ref bytes, _) => {
+                        let decoded_text = Document::decode_text(encoding, bytes);
+                        text.push_str(&decoded_text);
+                    }
+                    Object::Array(ref arr) => {
+                        collect_text(text, encoding, arr);
+                        text.push(' ');
+                    }
+                    Object::Integer(i) => {
+                        if i < -100 {
+                            text.push(' ');
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let mut text = String::new();
+        let pages = self_.get_pages();
+        for page_number in page_numbers {
+            let page_id = *pages.get(page_number).ok_or(lopdf::Error::PageNumberNotFound(*page_number))?;
+            let fonts = self_.get_page_fonts(page_id);
+            let encodings = fonts
+                .into_iter()
+                .map(|(name, font)| (name, font.get_font_encoding()))
+                .collect::<BTreeMap<Vec<u8>, &str>>();
+            let content_data = self_.get_page_content(page_id)?;
+            let content = lopdf::content::Content::decode(&content_data)?;
+            let mut current_encoding = None;
+            for operation in &content.operations {
+                match operation.operator.as_ref() {
+                    "Tf" => {
+                        let current_font = operation
+                            .operands
+                            .get(0)
+                            .ok_or_else(|| lopdf::Error::Syntax("missing font operand".to_string()))?
+                            .as_name()?;
+                        current_encoding = encodings.get(current_font).cloned();
+                    }
+                    "Tj" | "TJ" => {
+                        collect_text(&mut text, current_encoding, &operation.operands);
+                    }
+                    "ET" => {
+                        if !text.ends_with('\n') {
+                            text.push('\n');
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Ok(text)
+    }
+
 fn main() {
     let args = Args::parse();
 
@@ -51,7 +110,7 @@ fn main() {
     println!("{}", "Extracting words from pages...".green());
     let mut index = BTreeMap::new();
     for (page_number, _) in doc.get_pages() {
-        let text = doc.extract_text(&[page_number]).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
+        let text = extract_text(&doc, &[page_number]).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
 
         for word in text.split_whitespace() {
             let word = if !args.no_filtering {
