@@ -32,6 +32,10 @@ struct Args {
     #[arg(short, long, default_value_t = false)]
     insert_newlines: bool,
 
+    /// Full text search mode (within a page)
+    #[arg(short, long, default_value_t = false)]
+    full_text: bool,
+
     /// Specify which pages to extract
     #[arg(long, num_args = 1..)]
     pages: Option<Vec<u32>>,
@@ -47,7 +51,6 @@ fn load_words(path: &PathBuf) -> HashSet<String> {
     let words: HashSet<_> = BufReader::new(words_file)
         .lines()
         .map(|x| x.expect("Unable to parse a line from the words.txt"))
-        .map(|word| word.to_lowercase())
         .collect();
 
     words
@@ -137,6 +140,22 @@ fn split_words(no_filtering: bool, text: &str, words: &Option<HashSet<String>>) 
     result
 }
 
+fn full_text(text: &str, words: &HashSet<String>) -> Vec<(String, String)> {
+    let mut result = vec![];
+    let text = text.to_lowercase();
+    for word in words {
+        let key = word.to_lowercase();
+        let key = key.trim();
+        if key.is_empty() { continue; }
+        println!("{:?}", word);
+        if text.contains(key) {
+            result.push((key.to_owned(), word.to_owned()));
+        }
+    }
+
+    result
+}
+
 fn main() {
     let args = Args::parse();
 
@@ -144,6 +163,8 @@ fn main() {
     let doc = Document::load(args.pdf).expect("Unable to open PDF");
 
     let words = args.words.map(|x| load_words(&x));
+    let words = if !args.full_text { words.map(|words| words.into_iter().map(|word| word.to_lowercase()).collect()) }
+                                               else { words };
 
     println!("{}", "Extracting words from pages...".green());
     let mut index = BTreeMap::new();
@@ -156,7 +177,12 @@ fn main() {
             println!("page {}\n{}\n", page_number, text.blue());
         }
 
-        let matches = split_words(args.no_filtering, &text, &words);
+        let matches = if args.full_text {
+            full_text(&text, &words.as_ref().expect("Cannot perform full text search without a word list"))
+        }
+        else {
+            split_words(args.no_filtering, &text, &words)
+        };
 
         for (key, word) in matches {
             let entry = &mut *index.entry(key).or_insert(vec![]);
