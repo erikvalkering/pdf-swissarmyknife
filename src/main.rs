@@ -31,6 +31,10 @@ struct Args {
     /// Specify which pages to extract
     #[arg(short, long, num_args = 1..)]
     pages: Option<Vec<u32>>,
+
+    /// Dump full extracted page text (for debugging)
+    #[arg(short, long, default_value_t = false)]
+    dump: bool,
 }
 
 fn load_words(path: &PathBuf) -> HashSet<String> {
@@ -143,6 +147,9 @@ fn main() {
 
         let text = extract_text(&doc, &[page_number]).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
 
+        if args.dump {
+            println!("page {}\n{}\n", page_number, text.blue());
+        }
 
         let matches = split_words(args.no_filtering, &text, &words);
 
