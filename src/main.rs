@@ -156,13 +156,11 @@ fn full_text(text: &str, words: &HashSet<String>) -> Vec<(String, String)> {
     result
 }
 
-fn main() {
-    let args = Args::parse();
-
+fn extract_index(args: &Args) -> BTreeMap<std::string::String, Vec<(std::string::String, u32)>> {
     println!("{}", "Reading pdf...".green());
-    let doc = Document::load(args.pdf).expect("Unable to open PDF");
+    let doc = Document::load(&args.pdf).expect("Unable to open PDF");
 
-    let words = args.words.map(|x| load_words(&x));
+    let words = args.words.as_ref().map(|x| load_words(&x));
     let words = if !args.full_text { words.map(|words| words.into_iter().map(|word| word.to_lowercase()).collect()) }
                                                else { words };
 
@@ -189,6 +187,13 @@ fn main() {
             entry.push((word, page_number));
         }
     }
+
+    index
+}
+
+fn main() {
+    let args = Args::parse();
+    let index = extract_index(&args);
 
     println!("{}", "Writing to output file...".green());
     let mut output = File::create(args.output).expect("Unable to create output file");
