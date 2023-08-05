@@ -33,7 +33,7 @@ struct Args {
     insert_newlines: bool,
 
     /// Specify which pages to extract
-    #[arg(short, long, num_args = 1..)]
+    #[arg(long, num_args = 1..)]
     pages: Option<Vec<u32>>,
 
     /// Dump full extracted page text (for debugging)
