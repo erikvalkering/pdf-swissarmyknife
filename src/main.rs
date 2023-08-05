@@ -28,6 +28,10 @@ struct Args {
     #[arg(short, long, default_value_t = false)]
     no_filtering: bool,
 
+    /// Insert newlines after encountering end of text block
+    #[arg(short, long, default_value_t = false)]
+    insert_newlines: bool,
+
     /// Specify which pages to extract
     #[arg(short, long, num_args = 1..)]
     pages: Option<Vec<u32>>,
@@ -49,7 +53,7 @@ fn load_words(path: &PathBuf) -> HashSet<String> {
     words
 }
 
-fn extract_text(self_: &Document, page_numbers: &[u32]) -> lopdf::Result<String> {
+fn extract_text(self_: &Document, page_numbers: &[u32], insert_newlines: bool) -> lopdf::Result<String> {
         fn collect_text(text: &mut String, encoding: Option<&str>, operands: &[Object]) {
             for operand in operands.iter() {
                 match *operand {
@@ -96,7 +100,8 @@ fn extract_text(self_: &Document, page_numbers: &[u32]) -> lopdf::Result<String>
                         collect_text(&mut text, current_encoding, &operation.operands);
                     }
                     "ET" => {
-                        if !text.ends_with('\n') {
+                        if !text.ends_with('\n') && insert_newlines {
+                            text.push('\n');
                         }
                     }
                     _ => {}
@@ -145,7 +150,7 @@ fn main() {
     for (page_number, _) in doc.get_pages() {
         if args.pages.as_ref().map_or(false, |pages| !pages.contains(&page_number)) { continue; };
 
-        let text = extract_text(&doc, &[page_number]).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
+        let text = extract_text(&doc, &[page_number], args.insert_newlines).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
 
         if args.dump {
             println!("page {}\n{}\n", page_number, text.blue());
