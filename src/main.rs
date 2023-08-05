@@ -98,6 +98,32 @@ fn extract_text(self_: &Document, page_numbers: &[u32]) -> lopdf::Result<String>
         Ok(text)
     }
 
+fn split_words(no_filtering: bool, text: &str, words: &Option<HashSet<String>>) -> Vec<(String, String)> {
+    let mut result = vec![];
+    for word in text.split_whitespace() {
+        let word = if !no_filtering {
+            let word = word.trim_matches(|c| !char::is_alphabetic(c));
+            if word.is_empty() { continue; }
+            if !word.chars().all(char::is_alphabetic) { continue; }
+
+            word
+        }
+        else { word };
+
+        let key = word.to_lowercase();
+        if match words {
+            Some(words) => !words.contains(&key),
+            None => false,
+        } {
+            continue;
+        }
+
+        result.push((key, word.to_owned()));
+    }
+
+    result
+}
+
 fn main() {
     let args = Args::parse();
 
@@ -111,26 +137,12 @@ fn main() {
     for (page_number, _) in doc.get_pages() {
         let text = extract_text(&doc, &[page_number]).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
 
-        for word in text.split_whitespace() {
-            let word = if !args.no_filtering {
-                let word = word.trim_matches(|c| !char::is_alphabetic(c));
-                if word.is_empty() { continue; }
-                if !word.chars().all(char::is_alphabetic) { continue; }
 
-                word
-            }
-            else { word };
+        let matches = split_words(args.no_filtering, &text, &words);
 
-            let key = word.to_lowercase();
-            if match &words {
-                Some(words) => !words.contains(&key),
-                None => false,
-            } {
-                continue;
-            }
-
+        for (key, word) in matches {
             let entry = &mut *index.entry(key).or_insert(vec![]);
-            entry.push((word.to_owned(), page_number));
+            entry.push((word, page_number));
         }
     }
 
