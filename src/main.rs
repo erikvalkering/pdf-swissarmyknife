@@ -147,7 +147,7 @@ fn full_text(text: &str, words: &HashSet<String>) -> Vec<(String, String)> {
         let key = word.to_lowercase();
         let key = key.trim();
         if key.is_empty() { continue; }
-        println!("{:?}", word);
+
         if text.contains(key) {
             result.push((key.to_owned(), word.to_owned()));
         }
