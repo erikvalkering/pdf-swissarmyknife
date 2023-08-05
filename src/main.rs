@@ -27,6 +27,10 @@ struct Args {
     /// Disable trimming of parentheses and allow non-alphabetic characters
     #[arg(short, long, default_value_t = false)]
     no_filtering: bool,
+
+    /// Specify which pages to extract
+    #[arg(short, long, num_args = 1..)]
+    pages: Option<Vec<u32>>,
 }
 
 fn load_words(path: &PathBuf) -> HashSet<String> {
@@ -135,6 +139,8 @@ fn main() {
     println!("{}", "Extracting words from pages...".green());
     let mut index = BTreeMap::new();
     for (page_number, _) in doc.get_pages() {
+        if args.pages.as_ref().map_or(false, |pages| !pages.contains(&page_number)) { continue; };
+
         let text = extract_text(&doc, &[page_number]).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
 
 
