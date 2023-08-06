@@ -3,7 +3,7 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::io::{BufReader, BufRead, Write};
 
-use clap::Parser;
+use clap::{Parser, Subcommand, Args};
 use itertools::Itertools;
 use lopdf::Document;
 use lopdf::Object;
@@ -11,7 +11,19 @@ use colored::Colorize;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
-struct Args {
+struct AppArgs {
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(Subcommand, Debug)]
+enum Command {
+    /// Generate an index for a given pdf file
+    Index(IndexArgs),
+}
+
+#[derive(Args, Debug)]
+struct IndexArgs {
     /// Path to PDF to generate an index for
     #[arg(short, long, default_value = "input.pdf")]
     pdf: PathBuf,
@@ -156,7 +168,7 @@ fn full_text(text: &str, words: &HashSet<String>) -> Vec<(String, String)> {
     result
 }
 
-fn extract_index(args: &Args) -> BTreeMap<std::string::String, Vec<(std::string::String, u32)>> {
+fn extract_index(args: &IndexArgs) -> BTreeMap<std::string::String, Vec<(std::string::String, u32)>> {
     println!("{}", "Reading pdf...".green());
     let doc = Document::load(&args.pdf).expect("Unable to open PDF");
 
@@ -191,12 +203,11 @@ fn extract_index(args: &Args) -> BTreeMap<std::string::String, Vec<(std::string:
     index
 }
 
-fn main() {
-    let args = Args::parse();
+fn index(args: &IndexArgs) {
     let index = extract_index(&args);
 
     println!("{}", "Writing to output file...".green());
-    let mut output = File::create(args.output).expect("Unable to create output file");
+    let mut output = File::create(&args.output).expect("Unable to create output file");
     for pages in index.values() {
         let unique_words: HashSet<_> = pages.iter().map(|(word, _)| word).collect();
         let page_numbers: BTreeSet<_> = pages.iter().map(|(_, page)| page).collect();
@@ -207,5 +218,12 @@ fn main() {
             unique_words.iter().join(", "),
             page_numbers.iter().join(", "),
         ).expect("Unable to write index entry to output");
+    }
+}
+
+fn main() {
+    let args = AppArgs::parse();
+    match &args.command {
+        Command::Index(args) => index(args),
     }
 }
