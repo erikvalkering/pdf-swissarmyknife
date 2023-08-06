@@ -20,6 +20,9 @@ struct AppArgs {
 enum Command {
     /// Generate an index for a given pdf file
     Index(IndexArgs),
+
+    /// Join several pdf files into a single document
+    Join(JoinArgs),
 }
 
 #[derive(Args, Debug)]
@@ -55,6 +58,16 @@ struct IndexArgs {
     /// Dump full extracted page text (for debugging)
     #[arg(short, long, default_value_t = false)]
     dump: bool,
+}
+
+#[derive(Args, Debug)]
+struct JoinArgs {
+    /// Path to PDFs to be joined
+    pdf: Vec<PathBuf>,
+
+    /// Path to the resulting joined PDF
+    #[arg(short, long, default_value = "output.pdf")]
+    output: PathBuf,
 }
 
 fn load_words(path: &PathBuf) -> HashSet<String> {
@@ -221,9 +234,14 @@ fn index(args: &IndexArgs) {
     }
 }
 
+fn join(args: &JoinArgs) {
+    // TODO
+}
+
 fn main() {
     let args = AppArgs::parse();
     match &args.command {
         Command::Index(args) => index(args),
+        Command::Join(args) => join(args),
     }
 }
