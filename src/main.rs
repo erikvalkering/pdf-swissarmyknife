@@ -417,3 +417,52 @@ fn main() {
         Command::Join(args) => join(args),
     }
 }
+
+#[test]
+fn test() {
+    let args = IndexArgs{
+        pdf: "input.pdf".into(),
+        dump: false,
+        full_text: true,
+        insert_newlines: false,
+        no_filtering: false,
+        output: "".into(),
+        pages: None,
+        words: Some("words_test.txt".into()),
+    };
+
+    let index = extract_index(&args);
+
+    let pages: BTreeSet<_> = index["canusium"].iter().map(|(_, p)| p.clone()).collect();
+   // let pages: Vec<_> = pages.iter().map(|x| x.clone()).collect();
+    let expected = BTreeSet::from([
+        18, 24, 29, 36, 39, 42, 44, 47,
+        49, 68, 69, 70, 71, 76, 77, 78,
+        83, 86, 112, 117, 119, 132, 138,
+        143, 150, 157, 158, 161, 162,
+        165, 173, 178, 218, 219, 222,
+        224, 234, 244, 260, 261, 264,
+        266, 267, 276, 277, 285, 288,
+        289, 294, 297, 299, 311, 314,
+        327, 330, 334, 344, 364, 373,
+        375, 377, 378, 382, 383, 395, 398,
+        400, 412, 415, 416, 417, 418,
+        436, 437, 438, 439, 440, 441, 442,
+        455, 462, 464, 469, 470, 473, 476,
+        479, 482, 486, 487, 488, 490,
+        492, 493, 497, 501, 503, 504, 516,
+        558, 563, 567, 568, 569, 571, 573,
+        575, 585, 587, 588, 602, 611, 639,
+        645, 650, 651, 652, 654, 657,
+        661, 662, 665, 666, 668, 670, 671,
+        674, 678, 686, 689, 691, 692, 705,
+        707, 710, 714, 718, 721, 724,
+        739, 740, 741, 748, 750, 751,
+        753, 758, 761, 762, 763, 764, 765,
+        769, 778, 818, 819, 826,
+    ]);
+
+    assert_eq!(&expected - &pages, BTreeSet::from([]));
+    assert_eq!(&pages - &expected, BTreeSet::from([]));
+}
+
