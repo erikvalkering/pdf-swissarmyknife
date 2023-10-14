@@ -180,21 +180,31 @@ fn full_text(text: &str, words: &HashSet<String>) -> Vec<(String, String)> {
     result
 }
 
-fn extract_index(args: &IndexArgs) -> BTreeMap<std::string::String, Vec<(std::string::String, u32)>> {
+fn get_pages(args: &IndexArgs) -> Vec<(u32, std::string::String)> {
     println!("{}", "Reading pdf...".green());
     let doc = Document::load(&args.pdf).expect("Unable to open PDF");
 
-    let words = args.words.as_ref().map(|x| load_words(&x));
-    let words = if !args.full_text { words.map(|words| words.into_iter().map(|word| word.to_lowercase()).collect()) }
-                                               else { words };
-
-    println!("{}", "Extracting words from pages...".green());
-    let mut index = BTreeMap::new();
+    let mut pages = vec![];
     for (page_number, _) in doc.get_pages() {
         if args.pages.as_ref().map_or(false, |pages| !pages.contains(&page_number)) { continue; };
 
-        let text = extract_text(&doc, &[page_number], args.insert_newlines).unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
+        let text = extract_text(&doc, &[page_number], args.insert_newlines)
+                  .unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
 
+        pages.push((page_number, text));
+    }
+
+    pages
+}
+
+fn extract_index(args: &IndexArgs) -> BTreeMap<std::string::String, Vec<(std::string::String, u32)>> {
+    let words = args.words.as_ref().map(|x| load_words(&x));
+    let words = if !args.full_text { words.map(|words| words.into_iter().map(|word| word.to_lowercase()).collect()) }
+                else { words };
+
+    println!("{}", "Extracting words from pages...".green());
+    let mut index = BTreeMap::new();
+    for (page_number, text) in get_pages(&args) {
         if args.dump {
             println!("page {}\n{}\n", page_number, text.blue());
         }
