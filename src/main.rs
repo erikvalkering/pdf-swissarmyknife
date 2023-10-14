@@ -27,8 +27,8 @@ enum Command {
 #[derive(Args, Debug)]
 struct IndexArgs {
     /// Path to PDF to generate an index for
-    #[arg(short, long, default_value = "input.pdf")]
-    pdf: PathBuf,
+    #[arg(short, long)]
+    pdf: Option<PathBuf>,
 
     /// Path file to write index to
     #[arg(short, long, default_value = "index.txt")]
@@ -180,9 +180,9 @@ fn full_text(text: &str, words: &HashSet<String>) -> Vec<(String, String)> {
     result
 }
 
-fn get_pages(args: &IndexArgs) -> Vec<(u32, std::string::String)> {
+fn get_pages_from_pdf(pdf: &PathBuf, args: &IndexArgs) -> Vec<(u32, std::string::String)> {
     println!("{}", "Reading pdf...".green());
-    let doc = Document::load(&args.pdf).expect("Unable to open PDF");
+    let doc = Document::load(&pdf).expect("Unable to open PDF");
 
     let mut pages = vec![];
     for (page_number, _) in doc.get_pages() {
@@ -195,6 +195,13 @@ fn get_pages(args: &IndexArgs) -> Vec<(u32, std::string::String)> {
     }
 
     pages
+}
+
+fn get_pages(args: &IndexArgs) -> Vec<(u32, std::string::String)> {
+    if let Some(pdf) = &args.pdf {
+        get_pages_from_pdf(&pdf, &args)
+    }
+    else { panic!("No input source given") }
 }
 
 fn extract_index(args: &IndexArgs) -> BTreeMap<std::string::String, Vec<(std::string::String, u32)>> {
