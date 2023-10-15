@@ -30,6 +30,10 @@ struct IndexArgs {
     #[arg(short, long)]
     pdf: Option<PathBuf>,
 
+    /// Path to PDF json dump to generate an index for
+    #[arg(short, long)]
+    json: Option<PathBuf>,
+
     /// Path file to write index to
     #[arg(short, long, default_value = "index.txt")]
     output: PathBuf,
@@ -197,9 +201,23 @@ fn get_pages_from_pdf(pdf: &PathBuf, args: &IndexArgs) -> Vec<(u32, std::string:
     pages
 }
 
+fn get_pages_from_json(json: &PathBuf, _args: &IndexArgs) -> Vec<(u32, std::string::String)> {
+    println!("{}", "Reading json...".green());
+    let json = File::open(json).expect("Unable to open JSON");
+    let pages: Vec<String> = serde_json::from_reader(json).unwrap();
+
+    pages.into_iter()
+         .enumerate()
+         .map(|(idx, page)| ((idx+1) as u32, page))
+         .collect()
+}
+
 fn get_pages(args: &IndexArgs) -> Vec<(u32, std::string::String)> {
     if let Some(pdf) = &args.pdf {
         get_pages_from_pdf(&pdf, &args)
+    }
+    else if let Some(json) = &args.json {
+        get_pages_from_json(&json, &args)
     }
     else { panic!("No input source given") }
 }
