@@ -17,3 +17,8 @@ target/
 # Added by cargo
 
 /target
+
+*.swp
+*.pdf
+*.pdf.json
+*.txt
