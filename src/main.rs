@@ -477,7 +477,6 @@ fn test() {
     let index = extract_index(&args);
 
     let pages: BTreeSet<_> = index["canusium"].iter().map(|(_, p)| p.clone()).collect();
-    // let pages: Vec<_> = pages.iter().map(|x| x.clone()).collect();
     let expected = BTreeSet::from([
         18, 24, 29, 36, 39, 42, 44, 47,
         49, 68, 69, 70, 71, 76, 77, 78,
