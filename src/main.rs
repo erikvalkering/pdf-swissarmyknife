@@ -190,8 +190,6 @@ fn get_pages_from_pdf(pdf: &PathBuf, args: &IndexArgs) -> Vec<(u32, std::string:
 
     let mut pages = vec![];
     for (page_number, _) in doc.get_pages() {
-        if args.pages.as_ref().map_or(false, |pages| !pages.contains(&page_number)) { continue; };
-
         let text = extract_text(&doc, &[page_number], args.insert_newlines)
                   .unwrap_or_else(|_| panic!("Unable to extract text from page {} from PDF", page_number));
 
@@ -213,13 +211,22 @@ fn get_pages_from_json(json: &PathBuf, _args: &IndexArgs) -> Vec<(u32, std::stri
 }
 
 fn get_pages(args: &IndexArgs) -> Vec<(u32, std::string::String)> {
-    if let Some(pdf) = &args.pdf {
+    let pages = if let Some(pdf) = &args.pdf {
         get_pages_from_pdf(&pdf, &args)
     }
     else if let Some(json) = &args.json {
         get_pages_from_json(&json, &args)
     }
-    else { panic!("No input source given") }
+    else { panic!("No input source given") };
+
+    if let Some(page_numbers) = &args.pages {
+        pages.into_iter()
+             .filter(|(page_number, _)| page_numbers.contains(&page_number))
+             .collect()
+    }
+    else {
+        pages
+    }
 }
 
 fn extract_index(args: &IndexArgs) -> BTreeMap<std::string::String, Vec<(std::string::String, u32)>> {
