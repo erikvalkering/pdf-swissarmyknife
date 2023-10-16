@@ -456,7 +456,8 @@ fn main() {
 #[test]
 fn test() {
     let args = IndexArgs{
-        pdf: "input.pdf".into(),
+        pdf: None,
+        json: Some("input.pdf.json".into()),
         dump: false,
         full_text: true,
         insert_newlines: false,
@@ -469,7 +470,7 @@ fn test() {
     let index = extract_index(&args);
 
     let pages: BTreeSet<_> = index["canusium"].iter().map(|(_, p)| p.clone()).collect();
-   // let pages: Vec<_> = pages.iter().map(|x| x.clone()).collect();
+    // let pages: Vec<_> = pages.iter().map(|x| x.clone()).collect();
     let expected = BTreeSet::from([
         18, 24, 29, 36, 39, 42, 44, 47,
         49, 68, 69, 70, 71, 76, 77, 78,
@@ -497,7 +498,7 @@ fn test() {
         769, 778, 818, 819, 826,
     ]);
 
-    assert_eq!(&expected - &pages, BTreeSet::from([]));
-    assert_eq!(&pages - &expected, BTreeSet::from([]));
+    assert_eq!(&expected - &pages, BTreeSet::from([]), "missing pages");
+    assert_eq!(&pages - &expected, BTreeSet::from([]), "additional pages");
 }
 
