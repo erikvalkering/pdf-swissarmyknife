@@ -3,7 +3,7 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::io::{BufReader, BufRead, Write};
 
-use clap::{Parser, Subcommand, Args};
+use clap::{Parser, Subcommand, Args, ValueEnum};
 use itertools::Itertools;
 use lopdf::{Document, Object, ObjectId, Bookmark};
 use colored::Colorize;
@@ -24,15 +24,21 @@ enum Command {
     Join(JoinArgs),
 }
 
+#[derive(ValueEnum, Clone, Debug)]
+enum Backend {
+    Pdf,
+    Json,
+}
+
 #[derive(Args, Debug)]
 struct IndexArgs {
     /// Path to PDF to generate an index for
     #[arg(short, long)]
-    pdf: Option<PathBuf>,
+    input: PathBuf,
 
-    /// Path to PDF json dump to generate an index for
-    #[arg(short, long)]
-    json: Option<PathBuf>,
+    /// Backend to use to extract text from input file
+    #[arg(short, long, value_enum, default_value_t = Backend::Pdf)]
+    backend: Backend,
 
     /// Path file to write index to
     #[arg(short, long, default_value = "index.txt")]
@@ -184,9 +190,9 @@ fn full_text(text: &str, words: &HashSet<String>) -> Vec<(String, String)> {
     result
 }
 
-fn get_pages_from_pdf(pdf: &PathBuf, args: &IndexArgs) -> Vec<(u32, std::string::String)> {
+fn get_pages_from_pdf(args: &IndexArgs) -> Vec<(u32, std::string::String)> {
     println!("{}", "Reading pdf...".green());
-    let doc = Document::load(&pdf).expect("Unable to open PDF");
+    let doc = Document::load(&args.input).expect("Unable to open PDF");
 
     let mut pages = vec![];
     for (page_number, _) in doc.get_pages() {
@@ -199,9 +205,9 @@ fn get_pages_from_pdf(pdf: &PathBuf, args: &IndexArgs) -> Vec<(u32, std::string:
     pages
 }
 
-fn get_pages_from_json(json: &PathBuf, _args: &IndexArgs) -> Vec<(u32, std::string::String)> {
+fn get_pages_from_json(args: &IndexArgs) -> Vec<(u32, std::string::String)> {
     println!("{}", "Reading json...".green());
-    let json = File::open(json).expect("Unable to open JSON");
+    let json = File::open(&args.input).expect("Unable to open JSON");
     let pages: Vec<String> = serde_json::from_reader(json).unwrap();
 
     pages.into_iter()
@@ -211,13 +217,10 @@ fn get_pages_from_json(json: &PathBuf, _args: &IndexArgs) -> Vec<(u32, std::stri
 }
 
 fn get_pages(args: &IndexArgs) -> Vec<(u32, std::string::String)> {
-    let pages = if let Some(pdf) = &args.pdf {
-        get_pages_from_pdf(&pdf, &args)
-    }
-    else if let Some(json) = &args.json {
-        get_pages_from_json(&json, &args)
-    }
-    else { panic!("No input source given") };
+    let pages = match args.backend {
+        Backend::Pdf => get_pages_from_pdf(&args),
+        Backend::Json => get_pages_from_json(&args),
+    };
 
     if let Some(page_numbers) = &args.pages {
         pages.into_iter()
@@ -463,8 +466,8 @@ fn main() {
 #[test]
 fn test() {
     let args = IndexArgs{
-        pdf: None,
-        json: Some("input.pdf.json".into()),
+        backend: Backend::Json,
+        input: "input.pdf.json".into(),
         dump: false,
         full_text: true,
         insert_newlines: false,
