@@ -1,5 +1,5 @@
 use std::collections::{BTreeSet, HashSet, BTreeMap};
-use std::fs::File;
+use std::fs::{self, File};
 use std::path::PathBuf;
 use std::io::{BufReader, BufRead, Write};
 
@@ -28,6 +28,7 @@ enum Command {
 enum Backend {
     Pdf,
     Json,
+    Txt,
 }
 
 #[derive(Args, Debug)]
@@ -216,10 +217,21 @@ fn get_pages_from_json(args: &IndexArgs) -> Vec<(u32, std::string::String)> {
          .collect()
 }
 
+fn get_pages_from_txt(args: &IndexArgs) -> Vec<(u32, std::string::String)> {
+    println!("{}", "Reading txt...".green());
+    let text = fs::read_to_string(&args.input).expect("Unable to open TXT");
+
+    text.split("\x0C")
+        .enumerate()
+        .map(|(idx, page)| ((idx+1) as u32, page.to_owned()))
+        .collect()
+}
+
 fn get_pages(args: &IndexArgs) -> Vec<(u32, std::string::String)> {
     let pages = match args.backend {
         Backend::Pdf => get_pages_from_pdf(&args),
         Backend::Json => get_pages_from_json(&args),
+        Backend::Txt => get_pages_from_txt(&args),
     };
 
     if let Some(page_numbers) = &args.pages {
@@ -466,8 +478,8 @@ fn main() {
 #[test]
 fn test() {
     let args = IndexArgs{
-        backend: Backend::Json,
-        input: "input.pdf.json".into(),
+        backend: Backend::Txt,
+        input: "input.pdf.txt".into(),
         dump: false,
         full_text: true,
         insert_newlines: false,
